@@ -12,7 +12,9 @@ public class ClientHandler {
     private DataOutputStream out;
 
     private String username;
+    private UserRole role;
     private boolean authenticated;
+    private volatile boolean running = true;
 
     public ClientHandler(Socket socket, Server server) throws IOException {
         this.socket = socket;
@@ -64,7 +66,7 @@ public class ClientHandler {
                 }
 
                 //Цикл работы
-                while (authenticated) {
+                while (authenticated && running) {
                     String message = in.readUTF();
                     if (message.startsWith("/")) {
                         if (message.equals("/exit")) {
@@ -72,12 +74,26 @@ public class ClientHandler {
                             break;
                         }
 
+                        if (message.startsWith("/kick ")) {
+                            String[] parts = message.split(" ", 3);
+                            if (parts.length > 2) {
+                                String usernameToKick = parts[1];
+                                server.kickUser(this, usernameToKick, parts[2]);
+
+                            } else {
+                                sendMsg("Использование: /kick username reason");
+                            }
+                        }
+
                     } else {
                         server.broadcastMessage(username + ": " + message);
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                if (running) {
+                    e.printStackTrace();
+                }
+                running = false;
             } finally {
                 disconnect();
             }
@@ -96,32 +112,43 @@ public class ClientHandler {
         return username;
     }
 
+    public UserRole getRole() {
+        return role;
+    }
+
     public void setUsername(String username) {
         this.username = username;
     }
 
+    public void setRole(UserRole role) {
+        this.role = role;
+    }
+
     public void disconnect() {
-        server.unsubscribe(this);
-        try {
-            if (in != null) {
-                in.close();
+        if (running) {
+            running = false;
+            server.unsubscribe(this);
+            try {
+                if (in != null) {
+                    in.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
-            if (out != null) {
-                out.close();
+            try {
+                if (out != null) {
+                    out.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
-            if (socket != null) {
-                socket.close();
+            try {
+                if (socket != null) {
+                    socket.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 }

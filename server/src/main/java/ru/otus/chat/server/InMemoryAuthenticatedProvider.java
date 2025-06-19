@@ -8,11 +8,13 @@ public class InMemoryAuthenticatedProvider implements AuthenticatedProvider {
         private String login;
         private String password;
         private String username;
+        private UserRole role;
 
-        public User(String login, String password, String username) {
+        public User(String login, String password, String username, UserRole role) {
             this.login = login;
             this.password = password;
             this.username = username;
+            this.role = role;
         }
     }
 
@@ -22,9 +24,18 @@ public class InMemoryAuthenticatedProvider implements AuthenticatedProvider {
     public InMemoryAuthenticatedProvider(Server server) {
         this.server = server;
         this.users = new CopyOnWriteArrayList<>();
-        this.users.add(new User("qwe", "qwe", "qwe1"));
-        this.users.add(new User("asd", "asd", "asd1"));
-        this.users.add(new User("zxc", "zxc", "zxc1"));
+        this.users.add(new User("qwe", "qwe", "qwe1", UserRole.ADMIN));
+        this.users.add(new User("asd", "asd", "asd1", UserRole.USER));
+        this.users.add(new User("zxc", "zxc", "zxc1", UserRole.USER));
+    }
+
+    private UserRole getRoleByLoginAndPassword(String login, String password) {
+        for (User user : users) {
+            if (user.login.equals(login.toLowerCase()) && user.password.equals(password)) {
+                return user.role;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -62,7 +73,8 @@ public class InMemoryAuthenticatedProvider implements AuthenticatedProvider {
     @Override
     public boolean authenticate(ClientHandler clientHandler, String login, String password) {
         String authUsername = getUsernameByLoginAndPassword(login, password);
-        if (authUsername == null) {
+        UserRole role = getRoleByLoginAndPassword(login, password);
+        if (authUsername == null || role == null) {
             clientHandler.sendMsg("Некорректный логин/пароль");
             return false;
         }
@@ -71,6 +83,7 @@ public class InMemoryAuthenticatedProvider implements AuthenticatedProvider {
             return false;
         }
         clientHandler.setUsername(authUsername);
+        clientHandler.setRole(role);
         server.subscribe(clientHandler);
         clientHandler.sendMsg("/authok " + authUsername);
         return true;
@@ -98,7 +111,7 @@ public class InMemoryAuthenticatedProvider implements AuthenticatedProvider {
             clientHandler.sendMsg("Такое имя пользователя уже занято");
             return false;
         }
-        users.add(new User(login, password, username));
+        users.add(new User(login, password, username, UserRole.USER));
         clientHandler.setUsername(username);
         server.subscribe(clientHandler);
         clientHandler.sendMsg("/regok " + username);

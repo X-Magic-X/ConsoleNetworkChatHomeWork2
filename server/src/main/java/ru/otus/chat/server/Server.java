@@ -54,6 +54,23 @@ public class Server {
         return false;
     }
 
+    public void kickUser(ClientHandler admin, String usernameToKick, String reason) {
+        if (admin.getRole() != UserRole.ADMIN) {
+            admin.sendMsg("Ошибка: недостаточно прав");
+            return;
+        }
+
+        for (ClientHandler client : clients) {
+            if (client.getUsername().equals(usernameToKick)) {
+                client.sendMsg("/kickok " + reason);
+                client.disconnect();
+                broadcastMessage("Пользователь " + usernameToKick + " был отключен администратором " + admin.getUsername());
+                return;
+            }
+        }
+        admin.sendMsg("Пользователь " + usernameToKick + " не найден");
+    }
+
     public AuthenticatedProvider getAuthenticatedProvider() {
         return authenticatedProvider;
     }

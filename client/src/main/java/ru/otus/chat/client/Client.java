@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class Client {
@@ -11,6 +12,7 @@ public class Client {
     private Socket socket;
     private DataOutputStream out;
     private DataInputStream in;
+    private volatile boolean running = true;
 
     public Client() throws IOException {
         scanner = new Scanner(System.in);
@@ -27,8 +29,12 @@ public class Client {
                             if (message.equals("/exitok")) {
                                 break;
                             }
+                            if (message.startsWith("/kickok ")) {
+                                System.out.println("Вы были отключены администратором по причине: " + message.split(" ", 2)[1]);
+                                break;
+                            }
                             if (message.startsWith("/authok ")) {
-                                System.out.println("Вы подключились под ником: " + message.split(" ")[1]);
+                                System.out.println("Вы подключились под ником: " + message.substring(7));
                                 continue;
                             }
                             if (message.startsWith("/regok ")) {
@@ -48,6 +54,10 @@ public class Client {
 
             while (true) {
                 String message = scanner.nextLine();
+                if (!running) {
+                    disconnect();
+                    break;
+                }
                 out.writeUTF(message);
                 if (message.equals("/exit")) {
                     break;
@@ -60,6 +70,7 @@ public class Client {
     }
 
     public void disconnect() {
+        running = false;
         try {
             if (in != null) {
                 in.close();
