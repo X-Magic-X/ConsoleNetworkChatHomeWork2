@@ -34,7 +34,7 @@ public class Client {
                                 break;
                             }
                             if (message.startsWith("/authok ")) {
-                                System.out.println("Вы подключились под ником: " + message.substring(7));
+                                System.out.println("Вы подключились под ником: " + message.split(" ")[1]);
                                 continue;
                             }
                             if (message.startsWith("/regok ")) {
