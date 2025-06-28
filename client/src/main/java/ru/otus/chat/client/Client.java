@@ -30,7 +30,7 @@ public class Client {
                                 break;
                             }
                             if (message.startsWith("/kickok ")) {
-                                System.out.println("Вы были отключены администратором по причине: " + message.split(" ", 2)[1]);
+                                System.out.println("Вы были отключены по причине: " + message.split(" ", 2)[1]);
                                 break;
                             }
                             if (message.startsWith("/authok ")) {
@@ -40,6 +40,11 @@ public class Client {
                             if (message.startsWith("/regok ")) {
                                 System.out.println("Вы успешно зарегистрировались и подключились под ником: "
                                         + message.split(" ")[1]);
+                                continue;
+                            }
+                            if (message.startsWith("/nickchanged ")) {
+                                System.out.println("Никнейм успешно изменён на: " +
+                                        message.substring(13));
                                 continue;
                             }
                         }
