@@ -75,10 +75,10 @@ public class ClientHandler {
                         }
 
                         if (message.startsWith("/kick ")) {
-                            String[] parts = message.split(" ", 3);
-                            if (parts.length > 2) {
-                                String usernameToKick = parts[1];
-                                server.kickUser(this, usernameToKick, parts[2]);
+                            String[] parts = message.substring(6).split(" ", 2);
+                            if (parts.length == 2) {
+                                String usernameToKick = parts[0];
+                                server.kickUser(this, usernameToKick, parts[1]);
 
                             } else {
                                 sendMsg("Использование: /kick username reason");
