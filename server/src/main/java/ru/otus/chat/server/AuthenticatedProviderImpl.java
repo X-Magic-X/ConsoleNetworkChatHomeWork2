@@ -2,12 +2,11 @@ package ru.otus.chat.server;
 
 
 import java.sql.*;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class BaseAuthenticatedProvider implements AuthenticatedProvider {
+public class AuthenticatedProviderImpl implements AuthenticatedProvider {
 
 
     private class User {
@@ -72,11 +71,11 @@ public class BaseAuthenticatedProvider implements AuthenticatedProvider {
 
     private final Connection connection;
 
-    public BaseAuthenticatedProvider(Server server, String DATABASE_URL, String DATABASE_USER, String DATABASE_PASSWORD) {
+    public AuthenticatedProviderImpl(Server server, String DATABASE_URL, String DATABASE_USER, String DATABASE_PASSWORD) {
         this.server = server;
         this.DATABASE_URL = DATABASE_URL;
         this.DATABASE_USER = DATABASE_USER;
-        BaseAuthenticatedProvider.DATABASE_PASSWORD = DATABASE_PASSWORD;
+        AuthenticatedProviderImpl.DATABASE_PASSWORD = DATABASE_PASSWORD;
         this.users = new CopyOnWriteArrayList<>();
         try {
             connection = DriverManager.getConnection(DATABASE_URL, DATABASE_USER, DATABASE_PASSWORD);

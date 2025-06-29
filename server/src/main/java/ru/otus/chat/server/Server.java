@@ -16,25 +16,28 @@ public class Server {
     private static final String DATABASE_URL = "jdbc:postgresql://0.0.0.0:1234/postgres";
     private static final String DATABASE_USER = "postgres";
     private static final String DATABASE_PASSWORD = "pass123";
+    private boolean running = true;
+    ServerSocket serverSocket;
 
 
     public Server(int port) {
         this.port = port;
         clients = new CopyOnWriteArrayList<>();
-        authenticatedProvider = new BaseAuthenticatedProvider(this, DATABASE_URL, DATABASE_USER, DATABASE_PASSWORD);
-        this.inactivityChecker = new InactivityChecker(1_200_000, this);
-        new Thread(inactivityChecker).start();
+        authenticatedProvider = new AuthenticatedProviderImpl(this, DATABASE_URL, DATABASE_USER, DATABASE_PASSWORD);
+        inactivityChecker = new InactivityChecker(1_200_000, this);
     }
 
     public void start() {
+        inactivityChecker.start();
         try (ServerSocket serverSocket = new ServerSocket(port)) {
+            this.serverSocket = serverSocket;
             System.out.println("Сервер запущен на порту " + port);
-            while (true) {
+            while (running) {
                 Socket socket = serverSocket.accept();
                 new ClientHandler(socket, this);
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            if (running) throw new RuntimeException(e);
         }
     }
 
@@ -67,11 +70,19 @@ public class Server {
             admin.sendSystemMsg("Ошибка: недостаточно прав");
             return;
         }
-
         broadcastMessage("Выключение сервера");
+        running = false;
+        inactivityChecker.stop();
         for (ClientHandler c : clients) {
             c.sendSystemMsg("/exitok");
             c.disconnect();
+        }
+        if (serverSocket != null) {
+            try {
+                serverSocket.close();
+            } catch (IOException e) {
+                admin.sendSystemMsg("Ошибка: закрытия сокета");
+            }
         }
         System.exit(0);
     }

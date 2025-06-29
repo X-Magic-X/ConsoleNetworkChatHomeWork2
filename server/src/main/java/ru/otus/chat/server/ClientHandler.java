@@ -45,7 +45,7 @@ public class ClientHandler {
                         }
                         ///auth login password
                         if (message.startsWith("/auth ")) {
-                            String token[] = message.split(" ");
+                            String[] token = message.split(" ");
                             if (token.length != 3) {
                                 sendSystemMsg("Неверный формат команды /auth");
                                 continue;
@@ -58,7 +58,7 @@ public class ClientHandler {
                         }
                         ///reg login password username
                         if (message.startsWith("/reg ")) {
-                            String token[] = message.split(" ");
+                            String[] token = message.split(" ");
                             if (token.length != 4) {
                                 sendSystemMsg("Неверный формат команды /reg");
                                 continue;
@@ -119,12 +119,11 @@ public class ClientHandler {
                             if (newUsername.length() < 3 || newUsername.length() > 30) {
                                 sendMsg("Никнейм должен быть не менее 3 символов и не более 30");
                             } else if (server.changeUsername(this, newUsername)) {
-                                sendMsg("/nickchanged " + newUsername);
+                                sendSystemMsg("/nickchanged " + newUsername);
                             } else {
                                 sendMsg("Ошибка: никнейм уже занят или недопустим");
                             }
                         }
-
                     } else {
                         server.broadcastMessage(username + ": " + message);
                     }
@@ -133,7 +132,6 @@ public class ClientHandler {
                 if (running) {
                     e.printStackTrace();
                 }
-                running = false;
             } finally {
                 disconnect();
             }
@@ -174,7 +172,7 @@ public class ClientHandler {
         }
     }
 
-    public void updateActivityTime() {
+    private void updateActivityTime() {
         lastActivityTime = System.currentTimeMillis();
     }
 
@@ -208,29 +206,29 @@ public class ClientHandler {
 
     public void disconnect() {
         if (running) {
-            running = false;
             server.unsubscribe(this);
             try {
                 if (in != null) {
                     in.close();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                if (running) e.printStackTrace();
             }
             try {
                 if (out != null) {
                     out.close();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                if (running) e.printStackTrace();
             }
             try {
                 if (socket != null) {
                     socket.close();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                if (running) e.printStackTrace();
             }
+            running = false;
         }
     }
 }

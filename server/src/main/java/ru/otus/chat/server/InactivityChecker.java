@@ -1,30 +1,34 @@
 package ru.otus.chat.server;
 
-public class InactivityChecker implements Runnable {
+public class InactivityChecker {
     Server server;
     private final long timeoutMillis;
-    public volatile boolean running = true;
+    private volatile boolean running = false;
+    private Thread thread = null;
+
 
     public InactivityChecker(long timeoutMillis, Server server) {
         this.timeoutMillis = timeoutMillis;
         this.server = server;
     }
 
-    @Override
-    public void run() {
-        while (running) {
-            try {
-                Thread.sleep(60000);
-                checkInacvtiveUsers();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+    public void start() {
+        if (running) throw new RuntimeException("Повторный запуск некорректно");
+        running = true;
+        thread = new Thread(() -> {
+            while (running) {
+                try {
+                    Thread.sleep(60000);
+                    checkInactiveUsers();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
-        }
-
+        });
+        thread.start();
     }
 
-    public void checkInacvtiveUsers() {
-        long now = System.currentTimeMillis();
+    private void checkInactiveUsers() {
         for (ClientHandler c : server.getClients()) {
             if (c.getInactiveMillis() > timeoutMillis) {
                 server.broadcastMessage(c.getUsername() + " был отключен за неактивность");
@@ -37,6 +41,7 @@ public class InactivityChecker implements Runnable {
 
     public void stop() {
         running = false;
+        thread.stop();
     }
 }
 
