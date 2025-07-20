@@ -20,7 +20,7 @@ public class Server {
         this.port = port;
         clients = new CopyOnWriteArrayList<>();
         SQL.init(DATABASE_URL, DATABASE_USER, DATABASE_PASSWORD);
-        authenticatedProvider = new AuthenticatedProviderImpl(this, DATABASE_URL, DATABASE_USER, DATABASE_PASSWORD);
+        authenticatedProvider = new AuthenticatedProviderImpl(this);
     }
 
     public void start() {

@@ -2,21 +2,15 @@ package ru.otus.chat.server;
 
 import ru.otus.chat.server.service.SQL;
 
-import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class AuthenticatedProviderImpl  implements AuthenticatedProvider{
+public class AuthenticatedProviderImpl implements AuthenticatedProvider {
     private final Server server;
-    private final String DATABASE_URL;
-    private final String DATABASE_USER;
-    private final String DATABASE_PASSWORD;
 
-    public AuthenticatedProviderImpl(Server server, String DATABASE_URL, String DATABASE_USER, String DATABASE_PASSWORD) {
+    public AuthenticatedProviderImpl(Server server) {
         this.server = server;
-        this.DATABASE_URL = DATABASE_URL;
-        this.DATABASE_USER = DATABASE_USER;
-        this.DATABASE_PASSWORD = DATABASE_PASSWORD;
         initialize();
     }
 
@@ -25,36 +19,49 @@ public class AuthenticatedProviderImpl  implements AuthenticatedProvider{
         System.out.println("Сервис авторизации запущен");
     }
 
-    private boolean checkLoginExist(String login){
+    private boolean checkLoginExist(String login) {
+        PreparedStatement ps = SQL.getCheck_login_ps();
         try {
-            SQL.check_login_ps.setString(1, login);
-            try (ResultSet rs = SQL.check_login_ps.executeQuery()) {
+            ps.setString(1, login);
+            try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
-        }catch (SQLException e) {
-           throw new  RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 
+    private boolean checkUsernameExist(String username) {
+        PreparedStatement ps = SQL.getCheck_username_ps();
+        try {
+            ps.setString(1, username);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Override
     public boolean authenticate(ClientHandler clientHandler, String login, String password) {
+        PreparedStatement ps = SQL.get_user_by_login_pass_ps();
         int id = -1;
         String authUsername = null;
         int roleId = -1;
         UserRole role;
-        try{
-            SQL.get_user_by_login_pass_ps.setString(1, login);
-            SQL.get_user_by_login_pass_ps.setString(2, password);
-            try(ResultSet rs = SQL.get_user_by_login_pass_ps.executeQuery()){
-                if(rs.next()) {
-                     id = rs.getInt("user_id");
-                     authUsername = rs.getString("username");
-                     roleId = rs.getInt("role");
+        try {
+            ps.setString(1, login);
+            ps.setString(2, password);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    id = rs.getInt("user_id");
+                    authUsername = rs.getString("username");
+                    roleId = rs.getInt("role");
                     System.out.println(id + authUsername + roleId);
                 }
             }
-        } catch (SQLException e){
+        } catch (SQLException e) {
             throw new RuntimeException(e);
         }
         if (authUsername == null || roleId == -1 || id == -1) {
@@ -81,6 +88,48 @@ public class AuthenticatedProviderImpl  implements AuthenticatedProvider{
 
     @Override
     public boolean registration(ClientHandler clientHandler, String login, String password, String username) {
-        return false;
+        PreparedStatement psUser = SQL.getUser_add_ps();
+        PreparedStatement psRole = SQL.getUser_role_add_ps();
+        int userId = -1;
+        if (login.length() < 3) {
+            clientHandler.sendMsg("Логин должен быть 3+ символа");
+            return false;
+        }
+        if (username.length() < 3) {
+            clientHandler.sendMsg("Имя пользователя должна быть 3+ символа");
+            return false;
+        }
+        if (password.length() < 3) {
+            clientHandler.sendMsg("Пароль должен быть 3+ символа");
+            return false;
+        }
+        if (checkLoginExist(login)) {
+            clientHandler.sendMsg("Такой логин уже занят");
+            return false;
+        }
+        if (checkUsernameExist(username)) {
+            clientHandler.sendMsg("Такое имя пользователя уже занято");
+            return false;
+        }
+        try {
+            psUser.setString(1, username);
+            psUser.setString(2, login);
+            psUser.setString(3, password);
+            try (ResultSet rs = psUser.executeQuery()) {
+                if (rs.next()) {
+                    userId = rs.getInt("user_id");
+                    psRole.setInt(1, userId);
+                    psRole.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        clientHandler.setUsername(username);
+        clientHandler.setUserId(userId);
+        server.subscribe(clientHandler);
+        clientHandler.sendMsg("/regok " + username);
+
+        return true;
     }
 }
