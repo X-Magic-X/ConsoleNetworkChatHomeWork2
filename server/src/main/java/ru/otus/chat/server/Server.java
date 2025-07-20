@@ -1,5 +1,7 @@
 package ru.otus.chat.server;
 
+import ru.otus.chat.server.service.SQL;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -10,11 +12,15 @@ public class Server {
     private int port;
     private List<ClientHandler> clients;
     private AuthenticatedProvider authenticatedProvider;
+    private static final String DATABASE_URL = "jdbc:postgresql://0.0.0.0:1234/postgres";
+    private static final String DATABASE_USER = "postgres";
+    private static final String DATABASE_PASSWORD = "pass123";
 
     public Server(int port) {
         this.port = port;
         clients = new CopyOnWriteArrayList<>();
-        authenticatedProvider = new InMemoryAuthenticatedProvider(this);
+        SQL.init(DATABASE_URL, DATABASE_USER, DATABASE_PASSWORD);
+        authenticatedProvider = new AuthenticatedProviderImpl(this, DATABASE_URL, DATABASE_USER, DATABASE_PASSWORD);
     }
 
     public void start() {

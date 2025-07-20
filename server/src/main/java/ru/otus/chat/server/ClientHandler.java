@@ -11,6 +11,7 @@ public class ClientHandler {
     private DataInputStream in;
     private DataOutputStream out;
 
+    private int userId;
     private String username;
     private UserRole role;
     private boolean authenticated;
@@ -107,6 +108,9 @@ public class ClientHandler {
             throw new RuntimeException(e);
         }
     }
+    public int getUserId() { return userId; }
+
+    public void setUserId(int userId) { this.userId = userId; }
 
     public String getUsername() {
         return username;
