@@ -59,17 +59,12 @@ public class SQL {
 
     private static void statement_init() {
         try {
-            PreparedStatement add_user = connection.prepareStatement(USER_ADD_QUERY);
-            PreparedStatement user_role_add = connection.prepareStatement(USER_ROLE_ADD_QUERY);
-            PreparedStatement get_us_by_log_pass = connection.prepareStatement(GET_USER_BY_LOGIN_PASS_QUERY);
-            PreparedStatement check_login = connection.prepareStatement(CHECK_LOGIN_QUERY);
-            PreparedStatement check_username = connection.prepareStatement(CHECK_USERNAME_QUERY);
+            user_add_ps = connection.prepareStatement(USER_ADD_QUERY);
+            user_role_add_ps = connection.prepareStatement(USER_ROLE_ADD_QUERY);
+            user_by_login_pass_ps = connection.prepareStatement(GET_USER_BY_LOGIN_PASS_QUERY);
+            check_login_ps = connection.prepareStatement(CHECK_LOGIN_QUERY);
+            check_username_ps = connection.prepareStatement(CHECK_USERNAME_QUERY);
 
-            user_add_ps = add_user;
-            user_role_add_ps = user_role_add;
-            user_by_login_pass_ps = get_us_by_log_pass;
-            check_login_ps = check_login;
-            check_username_ps = check_username;
 
         } catch (SQLException e) {
             System.out.println("Ошибка инициализации БД");

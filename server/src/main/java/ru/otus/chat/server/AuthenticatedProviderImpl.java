@@ -126,6 +126,7 @@ public class AuthenticatedProviderImpl implements AuthenticatedProvider {
             throw new RuntimeException(e);
         }
         clientHandler.setUsername(username);
+        clientHandler.setRole(UserRole.USER);
         clientHandler.setUserId(userId);
         server.subscribe(clientHandler);
         clientHandler.sendMsg("/regok " + username);
